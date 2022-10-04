@@ -1,0 +1,23 @@
+{
+  "name": "node_email_verification",
+  "version": "1.0.0",
+  "description": "email verification with authentication package",
+  "main": "src/index",
+  "scripts": {
+    "start": "node src/",
+    "dev": "nodemon src/"
+  },
+  "author": "John Daniels",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.6.4",
+    "nodemailer": "^6.8.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
