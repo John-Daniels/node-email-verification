@@ -1,12 +1,11 @@
 const { Router } = require("express")
 const jwt = require("jsonwebtoken")
 const User = require("../models/User.model")
-const { sendVerificationMail } = require("../services/emails/index.service")
 const respond = require("../utils/respond")
 const router = Router()
 
-router.get("/", (req, res) => {
-  const users = User.find()
+router.get("/", async (req, res) => {
+  const users = await User.find({})
 
   res.send(users)
 })
@@ -28,7 +27,7 @@ router.post("/signup", async (req, res) => {
     // send verification mail here
   } catch (e) {
     console.log(e)
-    res.status(500).send(e)
+    respond(res, 500, "something went wrong")
   }
 })
 
@@ -36,20 +35,25 @@ router.post("/signup", async (req, res) => {
 //   username: 'John Daniels',
 //   password: '1234567890'
 // }
-router.post("/login", (req, res) => {
-  const credentials = req.body
+router.post("/login", async (req, res) => {
+  try {
+    const credentials = req.body
 
-  // verification wall
-  const user = User.findOne(credentials)
-  if (!user) return respond(res, 404, "Couldn'nt find any user ...")
+    // verification wall
+    const user = await User.findOne({ email: credentials.email })
+    if (!user) return respond(res, 404, "Couldn'nt find any user ...")
 
-  // if we are here --- that means that the user is available.... so lets check for verification
-  if (user.isVerified !== true)
-    return respond(res, 403, "Pls verify your account b4 you login") // this is a custom one for login...
+    // if we are here --- that means that the user is available.... so lets check for verification
+    if (user.isVerified !== true)
+      return respond(res, 403, "Pls verify your account b4 you login") // this is a custom one for login...
 
-  // so if we are here... it means the user is verified, now we can login :)
-  const userDetails = user.login(credentials)
-  respond(res, 200, "successfully logged in", userDetails)
+    // so if we are here... it means the user is verified, now we can login :)
+    const userDetails = await User.login(credentials)
+    respond(res, 200, "successfully logged in", userDetails)
+  } catch (e) {
+    console.log(e)
+    respond(res, 500, "something went wrong")
+  }
 })
 
 // /verificatiion?token=askdfr0i2dfksad;lkfpqdwiafisdfjds
@@ -74,7 +78,14 @@ router.post("/verification", async (req, res) => {
 
     respond(res, 200, "You have successfully verified your email")
   } catch (e) {
-    respond(res, 400, "Unable to verify, Please try again")
+    if (e.name === "TokenExpiredError")
+      return respond(
+        res,
+        400,
+        "Your token has expired, pls request for a new one"
+      )
+
+    respond(res, 400, "Unable to verify, Please try again", e)
   }
 })
 
@@ -91,11 +102,8 @@ router.post("/verification/request", async (req, res) => {
     await user.verify()
     respond(res, 200, "Successfully processed your request")
   } catch (e) {
-    console.log(e)
     respond(res, 500, "something went wrong")
   }
 })
 
 module.exports = router
-
-// send a verification message with a template engine

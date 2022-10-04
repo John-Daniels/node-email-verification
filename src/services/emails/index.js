@@ -12,7 +12,7 @@ const mailer = nodemailer.createTransport({
   },
 })
 
-const templatesDir = path.resolve("./templates")
+const templatesDir = path.resolve("src/services/emails/templates")
 
 // setup support work passing data into the html file
 // using handlebars, syntax...
@@ -36,15 +36,16 @@ mailer.use("compile", hbs(handlebarOptions))
  */
 const sendVerificationMail = async (email, link) => {
   try {
-    const result = await emailer.sendMail({
+    const result = await mailer.sendMail({
       from: "Node app",
       to: email,
       subject: "Verify your mail",
       template: "email_verification",
       context: {
-        link,
+        link, // this is the way we pass some data to the template
       },
     })
+
     return result
   } catch (e) {
     console.log(e)

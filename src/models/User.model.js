@@ -2,11 +2,18 @@ const mongoose = require("mongoose")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 
+const { sendVerificationMail } = require("../services/emails")
+
 const userSchema = new mongoose.Schema(
   {
-    username: String,
+    username: {
+      type: String,
+      unique: true,
+      required: true,
+    },
     email: {
       type: String,
+      unique: true,
       required: true,
     },
     password: String,
@@ -56,13 +63,13 @@ userSchema.methods.generateVerificationToken = async function () {
 userSchema.methods.verify = async function () {
   const user = this
 
-  const token = user.generateVerificationToken()
+  const token = await user.generateVerificationToken()
 
   //note: CLIENT_REQUEST_TOKEN_PATH must follow this pattern http://localhost:3000/auth/verify?token=
   const client_path = process.env.CLIENT_REQUEST_TOKEN_PATH
   const link = `${client_path}${token}`
 
-  return await sendVerificationMail(email, link)
+  return await sendVerificationMail(user.email, link)
 }
 
 userSchema.statics.login = async (credentials) => {
