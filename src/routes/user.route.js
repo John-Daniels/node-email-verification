@@ -1,6 +1,7 @@
 const { Router } = require("express")
 const jwt = require("jsonwebtoken")
 const User = require("../models/User.model")
+const { sendVerificationMail } = require("../services/emails/index.service")
 const respond = require("../utils/respond")
 const router = Router()
 
@@ -15,11 +16,14 @@ router.get("/", (req, res) => {
 //   email: 'adeyemijohndaniels@gmail.com'
 //   password: '1234567890'
 // }
-router.post("/signup", (req, res) => {
+router.post("/signup", async (req, res) => {
   try {
     const credentials = { ...req.body, isVerified: false }
     const user = User(credentials)
 
+    await user.save()
+
+    await user.verify()
     res.status(201).send(user)
     // send verification mail here
   } catch (e) {
@@ -41,7 +45,7 @@ router.post("/login", (req, res) => {
 
   // if we are here --- that means that the user is available.... so lets check for verification
   if (user.isVerified !== true)
-    return respond(res, 403, "Pls verify your account b4 you login")
+    return respond(res, 403, "Pls verify your account b4 you login") // this is a custom one for login...
 
   // so if we are here... it means the user is verified, now we can login :)
   const userDetails = user.login(credentials)
@@ -75,10 +79,23 @@ router.post("/verification", async (req, res) => {
 })
 
 // /verification/request/?email=test@gmail.com
-router.post("/verification/request", (req, res) => {
-  const users = User
+router.post("/verification/request", async (req, res) => {
+  try {
+    const email = req.query.email
 
-  res.send(users)
+    if (!email) return respond(res, 400, "the email is required")
+
+    const user = await User.findOne({ email })
+    if (!user) return respond(res, 404, "This user does not exist")
+
+    await user.verify()
+    respond(res, 200, "Successfully processed your request")
+  } catch (e) {
+    console.log(e)
+    respond(res, 500, "something went wrong")
+  }
 })
 
 module.exports = router
+
+// send a verification message with a template engine

@@ -53,6 +53,18 @@ userSchema.methods.generateVerificationToken = async function () {
   return token
 }
 
+userSchema.methods.verify = async function () {
+  const user = this
+
+  const token = user.generateVerificationToken()
+
+  //note: CLIENT_REQUEST_TOKEN_PATH must follow this pattern http://localhost:3000/auth/verify?token=
+  const client_path = process.env.CLIENT_REQUEST_TOKEN_PATH
+  const link = `${client_path}${token}`
+
+  return await sendVerificationMail(email, link)
+}
+
 userSchema.statics.login = async (credentials) => {
   const { password, ...credential } = credentials // life is not hard (*_*)
   const user = await User.findOne(credential)
