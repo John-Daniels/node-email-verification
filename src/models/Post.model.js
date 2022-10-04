@@ -2,8 +2,11 @@ const mongoose = require("mongoose")
 
 const postSchema = new mongoose.Schema(
   {
-    text: String,
-    user: {
+    text: {
+      type: String,
+      required: true,
+    },
+    username: {
       type: String,
       ref: "users",
     },
